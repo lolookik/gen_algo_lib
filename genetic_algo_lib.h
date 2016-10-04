@@ -31,11 +31,12 @@ public:
 	Gen_algo_lib(vector<int>, vector<gal_boundaries>);
 	int init_population();
 	int calc_fitness();
+	int set_fitness(int, double);
 	
 	//bool fitness_sort_binary(gal_structure, gal_structure);
 	int sort_by_fitness();
 	int elitism(vector<gal_structure>*, vector<gal_structure>*);
-	int mutate(gal_structure*, gal_boundaries*);
+	int mutate(gal_structure*);
 	int mate();
 	int print_best();
 	int swap();
@@ -43,14 +44,15 @@ public:
 	int evolve();
 
 	long int ret_pop_size();
-	int set_fitness(int, double);
+	long int ret_max_iter();
+	vector<int> ret_genome(int);
 
 private:
 	vector <gal_structure> population;
 	vector <gal_structure> buffer;
 	vector <gal_boundaries> limits;
-	long int pop_size = 5;// 2048;
-	int max_iter = 65536;
+	long int pop_size =  2048;
+	long int max_iter = 65536;
 	double elit_rate = 0.10;
 	double mutation_rate = 0.25;
 	double mutation = RAND_MAX * mutation_rate;
@@ -102,7 +104,7 @@ int Gen_algo_lib::init_population()
 		//citizen.genome = 0; //how to init to 0?
 
 		for (int j = 0; j<tsize; j++)
-			citizen.genome[j] = (rand() % (limits[j].high-limits[j].low) + limits[j].low);
+			citizen.genome[j] = (rand() % (limits[j].high-limits[j].low+1) + limits[j].low);
 
 		population.push_back(citizen);
 		buffer.push_back(citizen);
@@ -135,6 +137,8 @@ int Gen_algo_lib::calc_fitness()
 int Gen_algo_lib::set_fitness(int pop, double fit)
 {
 	population[pop].fitness = fit;
+	
+
 	return 0;
 }
 
@@ -167,13 +171,13 @@ int Gen_algo_lib::elitism(vector<gal_structure> *population,
 
 /*****************************************************************************/
 /* random mutations on selected citizen */
-int Gen_algo_lib::mutate(gal_structure* member, gal_boundaries* limits)
+int Gen_algo_lib::mutate(gal_structure* member)
 {
 	int tsize = target.size();
 	int ipos = rand() % tsize;
-	int delta = (rand() % (limits->high - limits->low) + limits->low);
+	int delta = (rand() % (limits[ipos].high - limits[ipos].low +1) + limits[ipos].low);
 
-	member->genome[ipos] = ((member->genome[ipos] + delta) % (limits->high - limits->low) + limits->low);
+	member->genome[ipos] = ((member->genome[ipos] + delta) % (limits[ipos].high - limits[ipos].low + 1) + limits[ipos].low);
 	return 0;
 }
 
@@ -182,13 +186,13 @@ int Gen_algo_lib::mutate(gal_structure* member, gal_boundaries* limits)
 /* *hum* */
 int Gen_algo_lib::mate()
 {
-	int esize = pop_size * elit_rate;
-	int tsize = target.size(), spos, i1, i2;
+	long int esize = pop_size * elit_rate;
+	long int tsize = target.size(), spos, i1, i2;
 	
 	//buffer stores old genomes as they are needed for the creation of the new ones
 	elitism(&population, &buffer);
 
-	for (int i = esize; i<pop_size; i++) {
+	for (long int i = esize; i<pop_size; i++) {
 		i1 = rand() % (pop_size/ 2);
 		i2 = rand() % (pop_size/ 2);
 		spos = rand() % tsize; 
@@ -202,7 +206,7 @@ int Gen_algo_lib::mate()
 		
 
 		if (rand() < mutation) 
-			mutate(&(buffer[i]), &limits[i]);
+			mutate(&(buffer[i]));
 	}
 	return 0;
 }
@@ -235,7 +239,8 @@ int Gen_algo_lib::evolve()
 {
 	init_population();
 	
-	for (int i = 0; i<max_iter; i++) {
+	for (int i = 0; i<max_iter; i++) 
+	{
 		calc_fitness();		// calculate fitness
 		sort_by_fitness();	// sort them
 		print_best();		// print the best one
@@ -255,6 +260,17 @@ long int Gen_algo_lib::ret_pop_size()
 	return pop_size;
 }
 
+/*****************************************************************************/
+/* returns maximum iteration number size */
+long int Gen_algo_lib::ret_max_iter()
+{
+	return max_iter;
+}
+
+vector<int> Gen_algo_lib::ret_genome(int index)
+{
+	return population[index].genome;
+}
 
 
 #endif //__GEN_ALGO_LIB__ #pragma once
